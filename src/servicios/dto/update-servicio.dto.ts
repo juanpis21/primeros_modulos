@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsEnum, IsOptional, IsBoolean, IsUrl, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional, IsBoolean, Min, Max } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { TipoServicio } from './create-servicio.dto';
 
 export class UpdateServicioDto {
@@ -27,6 +28,7 @@ export class UpdateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value !== undefined && value !== '' ? Number(value) : undefined)
   @IsNumber()
   precioBase?: number;
 
@@ -36,6 +38,7 @@ export class UpdateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value !== undefined && value !== '' ? Number(value) : undefined)
   @IsNumber()
   @Min(5)
   @Max(480)
@@ -57,6 +60,7 @@ export class UpdateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   requiereCita?: boolean;
 
@@ -66,6 +70,7 @@ export class UpdateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   isActive?: boolean;
 
@@ -75,16 +80,17 @@ export class UpdateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value !== undefined && value !== '' ? Number(value) : undefined)
   @IsNumber()
   veterinariaId?: number;
 
   @ApiProperty({ 
-    description: 'URL de imagen del servicio', 
-    example: 'https://example.com/images/consulta-general.jpg',
+    description: 'Ruta de imagen del servicio', 
+    example: '/uploads/servicios/imagen.jpg',
     required: false
   })
   @IsOptional()
-  @IsUrl()
+  @IsString()
   imagen?: string;
 
   @ApiProperty({ 

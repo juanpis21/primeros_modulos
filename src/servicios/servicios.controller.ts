@@ -7,14 +7,20 @@ import {
   Param, 
   Delete,
   Query,
-  UseGuards
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ServiciosService } from './servicios.service';
 import { CreateServicioDto } from './dto/create-servicio.dto';
 import { UpdateServicioDto } from './dto/update-servicio.dto';
 import { Servicio } from './entities/servicio.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('servicios')
 @Controller('servicios')
@@ -23,11 +29,30 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class ServiciosController {
   constructor(private readonly serviciosService: ServiciosService) {}
 
-  // Endpoints para Servicios
   @Post()
+  @UseInterceptors(FileInterceptor('imagen', {
+    storage: diskStorage({
+      destination: './uploads/servicios',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '_' + Math.round(Math.random() * 1E9);
+        cb(null, `servicio_${uniqueSuffix}${extname(file.originalname)}`);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        cb(new BadRequestException('Solo se permiten imágenes'), false);
+      } else {
+        cb(null, true);
+      }
+    },
+  }))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Crear un nuevo servicio' })
   @ApiResponse({ status: 201, description: 'Servicio creado exitosamente', type: Servicio })
-  create(@Body() createServicioDto: CreateServicioDto) {
+  create(@Body() createServicioDto: CreateServicioDto, @UploadedFile() file?: Express.Multer.File) {
+    if (file) {
+      createServicioDto.imagen = `/uploads/servicios/${file.filename}`;
+    }
     return this.serviciosService.create(createServicioDto);
   }
 
@@ -36,46 +61,6 @@ export class ServiciosController {
   @ApiResponse({ status: 200, description: 'Lista de servicios', type: [Servicio] })
   findAll() {
     return this.serviciosService.findAll();
-  }
-
-
-  @Get('veterinaria/:veterinariaId')
-  @ApiOperation({ summary: 'Obtener servicios por veterinaria' })
-  @ApiParam({ name: 'veterinariaId', description: 'ID de la veterinaria' })
-  @ApiResponse({ status: 200, description: 'Servicios de la veterinaria', type: [Servicio] })
-  findByVeterinaria(@Param('veterinariaId') veterinariaId: string) {
-    return this.serviciosService.findByVeterinaria(+veterinariaId);
-  }
-
-  @Get('tipo/:tipoServicio')
-  @ApiOperation({ summary: 'Obtener servicios por tipo' })
-  @ApiParam({ name: 'tipoServicio', description: 'Tipo de servicio' })
-  @ApiResponse({ status: 200, description: 'Servicios del tipo', type: [Servicio] })
-  findByTipo(@Param('tipoServicio') tipoServicio: string) {
-    return this.serviciosService.findByTipo(tipoServicio);
-  }
-
-  @Get('search/:query')
-  @ApiOperation({ summary: 'Buscar servicios' })
-  @ApiParam({ name: 'query', description: 'Término de búsqueda' })
-  @ApiResponse({ status: 200, description: 'Resultados de búsqueda', type: [Servicio] })
-  searchServicios(@Param('query') query: string) {
-    return this.serviciosService.searchServicios(query);
-  }
-
-  // Endpoints de Reportes
-  @Get('reportes/por-veterinaria')
-  @ApiOperation({ summary: 'Obtener reporte de servicios por veterinaria' })
-  @ApiResponse({ status: 200, description: 'Reporte por veterinaria' })
-  getReporteServiciosPorVeterinaria() {
-    return this.serviciosService.getReporteServiciosPorVeterinaria();
-  }
-
-  @Get('reportes/por-tipo')
-  @ApiOperation({ summary: 'Obtener reporte de servicios por tipo' })
-  @ApiResponse({ status: 200, description: 'Reporte por tipo' })
-  getServiciosPorTipo() {
-    return this.serviciosService.getServiciosPorTipo();
   }
 
   @Get(':id')
@@ -88,11 +73,28 @@ export class ServiciosController {
   }
 
   @Patch(':id')
+  @UseInterceptors(FileInterceptor('imagen', {
+    storage: diskStorage({
+      destination: './uploads/servicios',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '_' + Math.round(Math.random() * 1E9);
+        cb(null, `servicio_${uniqueSuffix}${extname(file.originalname)}`);
+      },
+    }),
+  }))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Actualizar un servicio' })
   @ApiParam({ name: 'id', description: 'ID del servicio' })
   @ApiResponse({ status: 200, description: 'Servicio actualizado', type: Servicio })
   @ApiResponse({ status: 404, description: 'Servicio no encontrado' })
-  update(@Param('id') id: string, @Body() updateServicioDto: UpdateServicioDto) {
+  update(
+    @Param('id') id: string, 
+    @Body() updateServicioDto: UpdateServicioDto,
+    @UploadedFile() file?: Express.Multer.File
+  ) {
+    if (file) {
+      updateServicioDto.imagen = `/uploads/servicios/${file.filename}`;
+    }
     return this.serviciosService.update(+id, updateServicioDto);
   }
 

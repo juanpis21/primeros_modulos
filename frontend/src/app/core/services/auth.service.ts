@@ -53,7 +53,10 @@ export class AuthService {
     const role = user.role;
     if (!role.modules) return [];
 
-    return role.modules.map((m: any) => m.name.toLowerCase().trim());
+    const modules = role.modules.map((m: any) => m.name.toLowerCase().trim());
+    console.log('🔍 [AuthService] Módulos crudos:', role.modules);
+    console.log('🔍 [AuthService] Módulos procesados:', modules);
+    return modules;
   });
 
   constructor(private http: HttpClient) {

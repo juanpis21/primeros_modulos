@@ -92,6 +92,11 @@ export class UsersService {
     return this.http.get<User[]>(this.apiUrl, { headers: this.getAuthHeaders() });
   }
 
+  getUsersByRoles(roles: string[]): Observable<User[]> {
+    const rolesParam = roles.join(',');
+    return this.http.get<User[]>(`${this.apiUrl}/by-roles?roles=${rolesParam}`, { headers: this.getAuthHeaders() });
+  }
+
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
   }

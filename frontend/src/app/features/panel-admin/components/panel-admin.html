@@ -89,7 +89,7 @@
 							<td>{{ user.firstName }} {{ user.lastName }}</td>
 							<td>{{ user.email }}</td>
 							<td>
-								<span class="role-badge">{{ user.role | titlecase }}</span>
+								<span class="role-badge">{{ getRolesString(user) }}</span>
 							</td>
 							<td>
 								<span class="status" [ngClass]="user.isActive ? 'active' : 'inactive'">
@@ -205,6 +205,25 @@
 						</tbody>
 					</table>
 				</div>
+			</section>
+
+			<!-- Gestión de Servicios -->
+			<section id="servicios" class="content-section">
+				<h2>Gestión de Servicios</h2>
+				<div class="section-actions">
+					<button class="btn-primary" routerLink="/servicios">
+						<i class="fas fa-cogs"></i> Administrar Servicios
+					</button>
+				</div>
+				<p class="section-description">
+					Accede al módulo completo de gestión de servicios donde podrás:
+				</p>
+				<ul class="feature-list">
+					<li>Crear, editar y eliminar servicios</li>
+					<li>Activar/desactivar servicios</li>
+					<li>Gestionar precios y duraciones</li>
+					<li>Ver todos los servicios incluyendo inactivos</li>
+				</ul>
 			</section>
 
 			<!-- Gestión Veterinaria -->

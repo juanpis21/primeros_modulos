@@ -59,35 +59,45 @@ export class Login {
   private redirectByPermissions(): void {
     console.log('🎯 [Login] Ejecutando redirectByPermissions');
     
-    // Lista de módulos en orden de prioridad
-    const modulePriority = [
-      'inicio',
-      'perfil-usuario',
-      'perfil-veterinario',
-      'panel-admin',
-      'sobre-nosotros',
-      'adopcion',
-      'tienda',
-      'reporte',
-      'calificacion',
-      'veterinario',
-      'servicios',
-      'pasarela-pagos',
-    ];
-
-    // Buscar el primer módulo al que tiene acceso
+    const user = this.authService.getCurrentUser();
     const userModules = this.authService.userModules();
-    for (const moduleName of modulePriority) {
-      if (userModules.includes(moduleName)) {
-        console.log(`✅ [Login] Redirigiendo a módulo permitido: ${moduleName}`);
-        this.router.navigate([`/${moduleName}`]);
-        return;
-      }
+    const roleName = user?.role?.name?.toLowerCase() || '';
+    
+    console.log('👤 [Login] Rol del usuario:', roleName);
+    console.log('🔍 [Login] Módulos del usuario:', userModules);
+    
+    // 1. Prioridad: Si el rol es "usuario", siempre va a inicio
+    if (roleName === 'usuario') {
+      console.log('✅ [Login] Rol "usuario" detectado. Redirigiendo a /inicio');
+      this.router.navigate(['/inicio']);
+      return;
+    }
+    
+    // 2. Si es admin o administrador, va a /admin
+    if (roleName === 'admin' || roleName === 'administrador') {
+      console.log('✅ [Login] Rol administrativo detectado. Redirigiendo a /admin');
+      this.router.navigate(['/admin']);
+      return;
     }
 
-    // Si no tiene acceso a ningún módulo, redirigir a inicio como fallback
-    console.log('⚠️ [Login] Usuario no tiene acceso a ningún módulo, redirigiendo a inicio');
-    this.router.navigate(['/inicio']);
+    // 3. Si es veterinario, redirigir a su perfil o inicio
+    if (roleName === 'veterinario') {
+      console.log('✅ [Login] Rol "veterinario" detectado. Redirigiendo a /inicio');
+      this.router.navigate(['/inicio']);
+      return;
+    }
+    
+    // 4. Fallback por módulos si no se detectó por nombre de rol
+    const hasAdminAccess = userModules.includes('dashboard') || userModules.includes('panel-admin');
+    
+    if (hasAdminAccess) {
+      this.router.navigate(['/admin']);
+    } else if (userModules.includes('inicio')) {
+      this.router.navigate(['/inicio']);
+    } else if (userModules.length > 0) {
+      this.router.navigate([`/${userModules[0]}`]);
+    } else {
+      this.router.navigate(['/login']);
+    }
   }
 }
-

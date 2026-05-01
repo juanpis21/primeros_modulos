@@ -6,6 +6,7 @@ import {
   Patch, 
   Param, 
   Delete,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -45,6 +46,14 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Lista de usuarios', type: [User] })
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('by-roles')
+  @ApiOperation({ summary: 'Obtener usuarios filtrados por roles' })
+  @ApiResponse({ status: 200, description: 'Lista de usuarios filtrados por rol', type: [User] })
+  findByRoles(@Query('roles') roles: string) {
+    const roleNames = roles ? roles.split(',').map(r => r.trim()) : ['usuario', 'veterinario'];
+    return this.usersService.findByRoles(roleNames);
   }
 
   @Get(':id')

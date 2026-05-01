@@ -1,0 +1,419 @@
+<div class="sidebar-overlay" [class.active]="sidebarOpen" (click)="toggleSidebar()"></div>
+
+<div class="admin-layout" [ngClass]="{'sidebar-closed': !sidebarOpen}">
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" [class.active]="sidebarOpen">
+    <div class="sidebar-header">
+      <h3>HelpYourPet</h3>
+      <div class="user-profile">
+        <img src="assets/IMG/Desparasitacion1.png" alt="Foto de perfil" class="profile-avatar">
+        <h5>Administrador</h5>
+        <p>Panel de Gestión</p>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li>
+        <a [class.active]="activeSection === 'dashboard'" (click)="setSection('dashboard')">
+          <i class="fas fa-home"></i><span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a [class.active]="activeSection === 'usuarios'" (click)="setSection('usuarios')">
+          <i class="fas fa-users"></i><span>Usuarios</span>
+        </a>
+      </li>
+      <li>
+        <a [class.active]="activeSection === 'servicios'" (click)="setSection('servicios')">
+          <i class="fas fa-concierge-bell"></i><span>Servicios</span>
+        </a>
+      </li>
+      <li>
+        <a [class.active]="activeSection === 'veterinarias'" (click)="setSection('veterinarias')">
+          <i class="fas fa-hospital"></i><span>Veterinarias</span>
+        </a>
+      </li>
+      <li class="separator">
+        <a class="logout-link" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- ===== CONTENIDO PRINCIPAL ===== -->
+  <main class="main-content">
+    <!-- DASHBOARD -->
+    <section *ngIf="activeSection === 'dashboard'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-home"></i> Panel de Control</h1>
+        <div class="header-actions">
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-info">
+            <h3>Usuarios</h3>
+            <p>{{ usuarios.length }}</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-concierge-bell"></i></div>
+          <div class="stat-info">
+            <h3>Servicios</h3>
+            <p>{{ servicios.length }}</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-hospital"></i></div>
+          <div class="stat-info">
+            <h3>Veterinarias</h3>
+            <p>1</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-info-circle"></i> Resumen del Sistema</h5>
+        </div>
+        <div class="card-body">
+          <p>Bienvenido al sistema de administración centralizado. Desde aquí puedes gestionar los módulos críticos de la plataforma.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- USUARIOS -->
+    <section *ngIf="activeSection === 'usuarios'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-users"></i> Gestión de Usuarios</h1>
+        <div class="header-actions">
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-list"></i> Lista de Usuarios Registrados</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let user of filteredUsuarios">
+                  <td>{{ user.id }}</td>
+                  <td>{{ user.firstName }} {{ user.lastName }}</td>
+                  <td>{{ user.email }}</td>
+                  <td><span class="badge">{{ getRolesString(user) }}</span></td>
+                  <td>
+                    <span class="status-pill" [class.active]="user.isActive">
+                      {{ user.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn-icon edit" (click)="openEditUserModal(user)" title="Editar"><i class="fas fa-edit"></i></button>
+                      <button class="btn-icon toggle" (click)="toggleEstadoUsuario(user)" [title]="user.isActive ? 'Desactivar' : 'Activar'">
+                        <i class="fas" [ngClass]="user.isActive ? 'fa-ban' : 'fa-check-circle'" [style.color]="user.isActive ? '#ef4444' : '#22c55e'"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVICIOS -->
+    <section *ngIf="activeSection === 'servicios'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-concierge-bell"></i> Gestión de Servicios</h1>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="toggleFilter()">
+            <i class="fas" [ngClass]="showOnlyInactive ? 'fa-eye' : 'fa-eye-slash'"></i>
+            {{ showOnlyInactive ? 'Ver Todos' : 'Ver Inactivos' }}
+          </button>
+          <button class="btn-primary" (click)="openAddServiceModal()">
+            <i class="fas fa-plus"></i> Agregar Servicio
+          </button>
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-list"></i> Catálogo de Servicios</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Imagen</th>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Precio</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of filteredServicios">
+                  <td>{{ s.id }}</td>
+                  <td>
+                    <div class="service-img-container">
+                      <img [src]="s.imagen ? baseUrl + s.imagen : 'assets/img/service-placeholder.png'" 
+                           [alt]="s.nombre" class="service-thumb">
+                    </div>
+                  </td>
+                  <td><strong>{{ s.nombre }}</strong></td>
+                  <td>{{ s.tipoServicio }}</td>
+                  <td>${{ s.precioBase }}</td>
+                  <td>
+                    <span class="status-pill" [class.active]="s.isActive">
+                      {{ s.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn-icon edit" (click)="openEditServiceModal(s)" title="Editar"><i class="fas fa-edit"></i></button>
+                      <button class="btn-icon toggle" (click)="toggleEstadoServicio(s)" [title]="s.isActive ? 'Desactivar' : 'Activar'">
+                        <i class="fas" [ngClass]="s.isActive ? 'fa-toggle-on' : 'fa-toggle-off'" [style.color]="s.isActive ? '#2e7d32' : '#c62828'"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div *ngIf="isLoading" class="loader-container">
+              <i class="fas fa-spinner fa-spin"></i> Cargando servicios...
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VETERINARIAS -->
+    <section *ngIf="activeSection === 'veterinarias'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-hospital"></i> Gestión de Veterinarias</h1>
+        <div class="header-actions">
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h5><i class="fas fa-info-circle"></i> Módulo en construcción</h5></div>
+        <div class="card-body">Próximamente...</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modales de Servicios -->
+  <div class="modal-overlay" *ngIf="showAddServiceModal" (click)="closeAddServiceModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Nuevo Servicio</h3>
+        <button class="close-btn" (click)="closeAddServiceModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre *</label>
+            <input type="text" [(ngModel)]="newService.nombre">
+          </div>
+          <div class="form-group">
+            <label>Tipo *</label>
+            <select [(ngModel)]="newService.tipoServicio">
+              <option value="CONSULTA">Consulta</option>
+              <option value="CIRUGIA">Cirugía</option>
+              <option value="VACUNACION">Vacunación</option>
+              <option value="ESTETICA">Estética</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Precio *</label>
+            <input type="number" [(ngModel)]="newService.precioBase">
+          </div>
+          <div class="form-group full">
+            <label>Imagen del Servicio</label>
+            <div class="file-upload-container">
+              <input type="file" (change)="onFileSelected($event)" accept="image/*" id="fileAdd">
+              <label for="fileAdd" class="file-label">
+                <i class="fas fa-cloud-upload-alt"></i> Seleccionar Imagen
+              </label>
+              <div *ngIf="imagePreview" class="preview-container">
+                <img [src]="imagePreview" class="img-preview">
+              </div>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="newService.descripcion" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddServiceModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarServicio()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showEditServiceModal" (click)="closeEditServiceModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Editar Servicio</h3>
+        <button class="close-btn" (click)="closeEditServiceModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre *</label>
+            <input type="text" [(ngModel)]="editingService.nombre">
+          </div>
+          <div class="form-group">
+            <label>Tipo *</label>
+            <select [(ngModel)]="editingService.tipoServicio">
+              <option value="CONSULTA">Consulta</option>
+              <option value="CIRUGIA">Cirugía</option>
+              <option value="VACUNACION">Vacunación</option>
+              <option value="ESTETICA">Estética</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Precio *</label>
+            <input type="number" [(ngModel)]="editingService.precioBase">
+          </div>
+          <div class="form-group full">
+            <label>Imagen del Servicio</label>
+            <div class="file-upload-container">
+              <input type="file" (change)="onFileSelected($event)" accept="image/*" id="fileEdit">
+              <label for="fileEdit" class="file-label">
+                <i class="fas fa-cloud-upload-alt"></i> Cambiar Imagen
+              </label>
+              <div *ngIf="imagePreview || editingService.imagen" class="preview-container">
+                <img [src]="imagePreview || (baseUrl + editingService.imagen)" class="img-preview">
+              </div>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="editingService.descripcion" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeEditServiceModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarEdicionServicio()">Actualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modales de Usuarios -->
+  <div class="modal-overlay" *ngIf="showAddUserModal" (click)="closeAddUserModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Registrar Usuario</h3>
+        <button class="close-btn" (click)="closeAddUserModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form (submit)="$event.preventDefault(); guardarUsuario()">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Usuario *</label>
+              <input type="text" [(ngModel)]="newUser.username" name="username" placeholder="Ej: juanp" required>
+            </div>
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" [(ngModel)]="newUser.email" name="email" placeholder="Ej: juan@mail.com" required>
+            </div>
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" [(ngModel)]="newUser.firstName" name="firstName" placeholder="Ej: Juan">
+            </div>
+            <div class="form-group">
+              <label>Apellido</label>
+              <input type="text" [(ngModel)]="newUser.lastName" name="lastName" placeholder="Ej: Pérez">
+            </div>
+            <div class="form-group">
+              <label>Contraseña *</label>
+              <input type="password" [(ngModel)]="newUser.password" name="password" required>
+            </div>
+            <div class="form-group">
+              <label>Rol</label>
+              <select [(ngModel)]="newUser.roleId" name="roleId">
+                <option [ngValue]="null">Seleccionar Rol</option>
+                <option *ngFor="let role of roles" [ngValue]="role.id">{{ role.name | titlecase }}</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddUserModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarUsuario()">Crear Usuario</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showEditUserModal" (click)="closeEditUserModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Editar Usuario</h3>
+        <button class="close-btn" (click)="closeEditUserModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form (submit)="$event.preventDefault(); guardarEdicionUsuario()">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Usuario</label>
+              <input type="text" [(ngModel)]="editingUser.username" name="username">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" [(ngModel)]="editingUser.email" name="email">
+            </div>
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" [(ngModel)]="editingUser.firstName" name="firstName">
+            </div>
+            <div class="form-group">
+              <label>Apellido</label>
+              <input type="text" [(ngModel)]="editingUser.lastName" name="lastName">
+            </div>
+            <div class="form-group">
+              <label>Nueva Contraseña (opcional)</label>
+              <input type="password" [(ngModel)]="editingUser.password" name="password" placeholder="Dejar en blanco para no cambiar">
+            </div>
+            <div class="form-group">
+              <label>Rol</label>
+              <select [(ngModel)]="editingUser.roleId" name="roleId">
+                <option *ngFor="let role of roles" [ngValue]="role.id">{{ role.name | titlecase }}</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeEditUserModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarEdicionUsuario()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>

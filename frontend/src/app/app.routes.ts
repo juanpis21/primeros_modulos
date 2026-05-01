@@ -12,6 +12,7 @@ import { Veterinario } from './features/veterinario/components/veterinario';
 import { PerfilVeterinario } from './features/perfil-veterinario/components/perfil-veterinario';
 import { PerfilUsuario } from './features/perfil-usuario/components/perfil-usuario';
 import { PanelAdmin } from './features/panel-admin/components/panel-admin';
+import { AdminModulesComponent } from './features/admin-modules/components/admin-modules.component';
 import { PasarelaPagos } from './features/pasarela-pagos/components/pasarela-pagos';
 import { Servicios } from './features/servicios/components/servicios';
 import { permissionGuard } from './core/guards/permission.guard';
@@ -89,9 +90,21 @@ export const routes: Routes = [
     data: { module: 'perfil-veterinario' }
   },
   { 
+    path: 'dashboard', 
+    component: PanelAdmin,
+    canActivate: [permissionGuard],
+    data: { module: 'dashboard' }
+  },
+  { 
     path: 'panel-admin', 
     component: PanelAdmin,
     canActivate: [permissionGuard],
     data: { module: 'panel-admin' }
+  },
+  { 
+    path: 'admin', 
+    component: AdminModulesComponent,
+    canActivate: [permissionGuard],
+    data: { module: 'dashboard' }
   }
 ];

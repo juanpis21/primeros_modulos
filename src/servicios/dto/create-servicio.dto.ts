@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsEnum, IsOptional, IsBoolean, IsUrl, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional, IsBoolean, Min, Max } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum TipoServicio {
   CONSULTA = 'CONSULTA',
@@ -24,6 +25,7 @@ export class CreateServicioDto {
     description: 'Descripción detallada del servicio', 
     example: 'Consulta veterinaria general para revisión de salud de mascotas' 
   })
+  @IsOptional()
   @IsString()
   descripcion: string;
 
@@ -31,6 +33,7 @@ export class CreateServicioDto {
     description: 'Precio base del servicio', 
     example: 25000.00 
   })
+  @Transform(({ value }) => value !== undefined && value !== '' ? Number(value) : undefined)
   @IsNumber()
   precioBase: number;
 
@@ -40,6 +43,7 @@ export class CreateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value !== undefined && value !== '' ? Number(value) : undefined)
   @IsNumber()
   @Min(5)
   @Max(480)
@@ -59,6 +63,7 @@ export class CreateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   requiereCita?: boolean;
 
@@ -68,6 +73,7 @@ export class CreateServicioDto {
     required: false
   })
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   isActive?: boolean;
 
@@ -75,16 +81,17 @@ export class CreateServicioDto {
     description: 'ID de la veterinaria', 
     example: 1 
   })
+  @Transform(({ value }) => value !== undefined && value !== '' ? Number(value) : undefined)
   @IsNumber()
   veterinariaId: number;
 
   @ApiProperty({ 
-    description: 'URL de imagen del servicio', 
-    example: 'https://example.com/images/consulta-general.jpg',
+    description: 'Ruta de imagen del servicio', 
+    example: '/uploads/servicios/imagen.jpg',
     required: false
   })
   @IsOptional()
-  @IsUrl()
+  @IsString()
   imagen?: string;
 
   @ApiProperty({ 

@@ -45,6 +45,35 @@
 	transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+/* Estilos para sección de servicios */
+.section-description {
+	color: var(--text-secondary);
+	margin: 1rem 0;
+	font-size: 0.95rem;
+	line-height: 1.6;
+}
+
+.feature-list {
+	list-style: none;
+	padding: 0;
+	margin: 1rem 0;
+}
+
+.feature-list li {
+	padding: 0.5rem 0;
+	padding-left: 1.5rem;
+	position: relative;
+	color: var(--text-secondary);
+}
+
+.feature-list li:before {
+	content: "✓";
+	position: absolute;
+	left: 0;
+	color: var(--success);
+	font-weight: bold;
+}
+
 body {
 	font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	background-color: var(--background-color);

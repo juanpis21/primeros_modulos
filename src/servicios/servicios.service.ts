@@ -26,7 +26,6 @@ export class ServiciosService {
   async findAll(): Promise<Servicio[]> {
     return this.serviciosRepository.find({ 
       relations: ['veterinaria'],
-      where: { isActive: true },
       order: { nombre: 'ASC' }
     });
   }

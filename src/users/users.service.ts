@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -58,6 +58,19 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     return this.usersRepository.find({
+      relations: ['pets', 'role'],
+      select: ['id', 'username', 'email', 'fullName', 'firstName', 'lastName', 'phone', 'documentType', 'documentNumber', 'age', 'address', 'avatar', 'roleId', 'isActive', 'createdAt', 'updatedAt'],
+    });
+  }
+
+  async findByRoles(roleNames: string[]): Promise<User[]> {
+    const roles = await this.rolesRepository.find({
+      where: { name: In(roleNames.map(r => r.toLowerCase())) },
+    });
+    if (!roles.length) return [];
+    const roleIds = roles.map(r => r.id);
+    return this.usersRepository.find({
+      where: { roleId: In(roleIds) },
       relations: ['pets', 'role'],
       select: ['id', 'username', 'email', 'fullName', 'firstName', 'lastName', 'phone', 'documentType', 'documentNumber', 'age', 'address', 'avatar', 'roleId', 'isActive', 'createdAt', 'updatedAt'],
     });
