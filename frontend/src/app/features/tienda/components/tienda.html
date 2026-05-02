@@ -194,11 +194,9 @@
 			<label class="filter-label">
 				<i class="fas fa-filter"></i> Categoría
 			</label>
-			<select class="filter-select" id="categoryFilter" [(ngModel)]="filtroCategoria">
+			<select class="filter-select" id="categoryFilter" [(ngModel)]="filtroCategoria" (change)="aplicarFiltros()">
 				<option value="all">Todas las categorías</option>
-				<option value="food">Alimentos</option>
-				<option value="accessories">Accesorios</option>
-				<option value="medicine">Medicamentos</option>
+				<option *ngFor="let cat of categorias" [value]="cat.nombre">{{ cat.nombre }}</option>
 			</select>
 		</div>
 
@@ -206,7 +204,7 @@
 			<label class="filter-label">
 				<i class="fas fa-sort-amount-down"></i> Ordenar por
 			</label>
-			<select class="filter-select" id="sortFilter" [(ngModel)]="filtroOrden">
+			<select class="filter-select" id="sortFilter" [(ngModel)]="filtroOrden" (change)="aplicarFiltros()">
 				<option value="featured">Destacados</option>
 				<option value="price-low">Precio: Menor a Mayor</option>
 				<option value="price-high">Precio: Mayor a Menor</option>
@@ -229,7 +227,7 @@
 		<p class="section-subtitle">Los favoritos de nuestros clientes</p>
 	</div>
 	<div class="products-grid" id="featuredProducts">
-		<div class="product-card" *ngFor="let producto of productos | slice:0:3">
+		<div class="product-card" *ngFor="let producto of filteredProducts | slice:0:3">
 			<div class="product-image">
 				<img [src]="producto.imagen || 'assets/IMG/default.png'" [alt]="producto.nombre">
 			</div>
@@ -238,7 +236,7 @@
 				<h3 class="product-name">{{ producto.nombre }}</h3>
 				<p class="product-description">{{ producto.descripcion }}</p>
 				<div class="product-bottom">
-					<span class="product-price">${{ producto.precio }}</span>
+					<span class="product-price">{{ formatPrice(producto.precio) }}</span>
 					<button class="add-to-cart" (click)="agregarAlCarrito(producto)">
 						<i class="fas fa-cart-plus"></i> Agregar
 					</button>
@@ -255,7 +253,7 @@
 		<p class="section-subtitle">Explora nuestro catálogo completo</p>
 	</div>
 	<div class="products-grid" id="allProducts">
-		<div class="product-card" *ngFor="let producto of productos">
+		<div class="product-card" *ngFor="let producto of filteredProducts">
 			<div class="product-image">
 				<img [src]="producto.imagen || 'assets/IMG/default.png'" [alt]="producto.nombre">
 			</div>
@@ -264,7 +262,7 @@
 				<h3 class="product-name">{{ producto.nombre }}</h3>
 				<p class="product-description">{{ producto.descripcion }}</p>
 				<div class="product-bottom">
-					<span class="product-price">${{ producto.precio }}</span>
+					<span class="product-price">{{ formatPrice(producto.precio) }}</span>
 					<button class="add-to-cart" (click)="agregarAlCarrito(producto)">
 						<i class="fas fa-cart-plus"></i> Agregar
 					</button>
@@ -297,7 +295,7 @@
 			</div>
 			<div class="cart-item-details">
 				<div class="cart-item-name">{{ item.nombre }}</div>
-				<div class="cart-item-price">${{ item.precio }}</div>
+				<div class="cart-item-price">{{ formatPrice(item.precio) }}</div>
 				<div class="cart-item-controls">
 					<button class="quantity-btn" (click)="actualizarCantidad(item.id, -1)">-</button>
 					<span class="quantity-display">{{ item.quantity }}</span>
@@ -313,11 +311,11 @@
 		<div class="cart-summary">
 			<div class="summary-row">
 				<span>Subtotal:</span>
-				<span id="subtotal">${{ obtenerTotal() }}</span>
+				<span id="subtotal">{{ formatPrice(obtenerTotal()) }}</span>
 			</div>
 			<div class="summary-row total">
 				<span>Total:</span>
-				<span id="total">${{ obtenerTotal() }}</span>
+				<span id="total">{{ formatPrice(obtenerTotal()) }}</span>
 			</div>
 		</div>
 		<button class="checkout-btn" id="checkoutBtn" (click)="procederPago()">

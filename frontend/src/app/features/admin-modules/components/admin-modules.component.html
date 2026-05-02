@@ -6,9 +6,10 @@
     <div class="sidebar-header">
       <h3>HelpYourPet</h3>
       <div class="user-profile">
-        <img src="assets/IMG/Desparasitacion1.png" alt="Foto de perfil" class="profile-avatar">
-        <h5>Administrador</h5>
-        <p>Panel de Gestión</p>
+        <img [src]="adminProfilePreview || adminUser.imagen || 'assets/images/Default.png'" 
+             alt="Foto" class="profile-avatar">
+        <h5>{{ adminUser.nombres }}</h5>
+        <p>{{ getAdminRoleName() }}</p>
       </div>
     </div>
 
@@ -31,6 +32,26 @@
       <li>
         <a [class.active]="activeSection === 'veterinarias'" (click)="setSection('veterinarias')">
           <i class="fas fa-hospital"></i><span>Veterinarias</span>
+        </a>
+      </li>
+      <li>
+        <a [class.active]="activeSection === 'productos'" (click)="setSection('productos')">
+          <i class="fas fa-box"></i><span>Productos</span>
+        </a>
+      </li>
+      <li>
+        <a [class.active]="activeSection === 'categorias'" (click)="setSection('categorias')">
+          <i class="fas fa-tags"></i><span>Categorías</span>
+        </a>
+      </li>
+      <li>
+        <a [class.active]="activeSection === 'inventario'" (click)="setSection('inventario')">
+          <i class="fas fa-warehouse"></i><span>Inventario</span>
+        </a>
+      </li>
+      <li>
+        <a [class.active]="activeSection === 'configuracion'" (click)="setSection('configuracion')">
+          <i class="fas fa-cog"></i><span>Configuración</span>
         </a>
       </li>
       <li class="separator">
@@ -71,7 +92,14 @@
           <div class="stat-icon"><i class="fas fa-hospital"></i></div>
           <div class="stat-info">
             <h3>Veterinarias</h3>
-            <p>1</p>
+            <p>{{ veterinarias.length }}</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-boxes"></i></div>
+          <div class="stat-info">
+            <h3>Productos</h3>
+            <p>{{ productos.length }}</p>
           </div>
         </div>
       </div>
@@ -214,12 +242,354 @@
       <div class="section-header">
         <h1><i class="fas fa-hospital"></i> Gestión de Veterinarias</h1>
         <div class="header-actions">
+          <button class="btn-primary" (click)="openAddVeterinariaModal()">
+            <i class="fas fa-plus"></i> Registrar Veterinaria
+          </button>
           <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
         </div>
       </div>
+
       <div class="card">
-        <div class="card-header"><h5><i class="fas fa-info-circle"></i> Módulo en construcción</h5></div>
-        <div class="card-body">Próximamente...</div>
+        <div class="card-header">
+          <h5><i class="fas fa-list"></i> Veterinarias Registradas</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>NIT</th>
+                  <th>Dirección</th>
+                  <th>Teléfono</th>
+                  <th>Email</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let vet of veterinarias">
+                  <td>{{ vet.id }}</td>
+                  <td><strong>{{ vet.nombre }}</strong></td>
+                  <td>{{ vet.rut }}</td>
+                  <td>{{ vet.direccion }}</td>
+                  <td>{{ vet.telefono }}</td>
+                  <td>{{ vet.email }}</td>
+                  <td>
+                    <span class="status-pill" [class.active]="vet.isActive">
+                      {{ vet.isActive ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn-icon edit" (click)="openEditVeterinariaModal(vet)" title="Editar"><i class="fas fa-edit"></i></button>
+                      <button class="btn-icon toggle" (click)="toggleEstadoVeterinaria(vet)" [title]="vet.isActive ? 'Desactivar' : 'Activar'">
+                        <i class="fas" [ngClass]="vet.isActive ? 'fa-toggle-on' : 'fa-toggle-off'" [style.color]="vet.isActive ? '#2e7d32' : '#c62828'"></i>
+                      </button>
+                      <button class="btn-icon delete" (click)="eliminarVeterinaria(vet)" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="veterinarias.length === 0">
+                  <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    <i class="fas fa-hospital" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.4;"></i>
+                    No hay veterinarias registradas
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTOS -->
+    <section *ngIf="activeSection === 'productos'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-boxes"></i> Gestión de Productos</h1>
+        <div class="header-actions">
+          <button class="btn-primary" (click)="openAddProductoModal()">
+            <i class="fas fa-plus"></i> Agregar Producto
+          </button>
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-list"></i> Inventario de Productos</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Stock</th>
+                  <th>P. Compra</th>
+                  <th>P. Venta</th>
+                  <th>Unidad</th>
+                  <th>Veterinaria</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let prod of productos">
+                  <td>{{ prod.id }}</td>
+                  <td><strong>{{ prod.nombre }}</strong></td>
+                  <td><span class="badge">{{ getCategoriaNombre(prod.categoriaId) }}</span></td>
+                  <td>
+                    <span [style.color]="prod.stockActual <= prod.stockMinimo ? '#c62828' : '#2e7d32'" style="font-weight: 600;">
+                      {{ prod.stockActual }}
+                    </span>
+                    <small style="opacity: 0.6;"> / mín: {{ prod.stockMinimo }}</small>
+                  </td>
+                  <td>${{ prod.precioCompra }}</td>
+                  <td>${{ prod.precioVenta }}</td>
+                  <td>{{ prod.unidadMedida }}</td>
+                  <td>{{ getVeterinariaNombre(prod.veterinariaId) }}</td>
+                  <td>
+                    <span class="status-pill" [class.active]="prod.isActive">
+                      {{ prod.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn-icon edit" (click)="openEditProductoModal(prod)" title="Editar"><i class="fas fa-edit"></i></button>
+                      <button class="btn-icon toggle" (click)="toggleEstadoProducto(prod)" [title]="prod.isActive ? 'Desactivar' : 'Activar'">
+                        <i class="fas" [ngClass]="prod.isActive ? 'fa-toggle-on' : 'fa-toggle-off'" [style.color]="prod.isActive ? '#2e7d32' : '#c62828'"></i>
+                      </button>
+                      <button class="btn-icon delete" (click)="eliminarProducto(prod)" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="productos.length === 0">
+                  <td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    <i class="fas fa-boxes" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.4;"></i>
+                    No hay productos registrados
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GESTIÓN DE CATEGORÍAS -->
+    <section *ngIf="activeSection === 'categorias'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-tags"></i> Gestión de Categorías</h1>
+        <div class="header-actions">
+          <button class="btn-primary" (click)="openAddCategoriaModal()">
+            <i class="fas fa-plus"></i> Nueva Categoría
+          </button>
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cat of categorias">
+                <td><strong>{{ cat.codigo }}</strong></td>
+                <td>{{ cat.nombre }}</td>
+                <td>{{ cat.descripcion || 'Sin descripción' }}</td>
+                <td>
+                  <span class="status-badge" [class.active]="cat.isActive">
+                    {{ cat.isActive ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <button class="btn-icon edit" (click)="openEditCategoriaModal(cat)" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn-icon toggle" (click)="toggleEstadoCategoria(cat)" 
+                          [title]="cat.isActive ? 'Desactivar' : 'Activar'">
+                    <i class="fas" [ngClass]="cat.isActive ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                  <button class="btn-icon delete" (click)="eliminarCategoria(cat)" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- INVENTARIO (Solo Lectura) -->
+    <section *ngIf="activeSection === 'inventario'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-warehouse"></i> Inventario General</h1>
+        <div class="header-actions">
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-clipboard-list"></i> Estado de Existencias</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Código / SKU</th>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>Existencias</th>
+                  <th>Stock Mínimo</th>
+                  <th>Precio Venta</th>
+                  <th>Ubicación</th>
+                  <th>Lote</th>
+                  <th>Vencimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let prod of productos">
+                  <td><code style="background: var(--bg-body); padding: 2px 6px; border-radius: 4px;">{{ prod.codigoBarras || 'N/A' }}</code></td>
+                  <td><strong>{{ prod.nombre }}</strong></td>
+                  <td><span class="badge">{{ getCategoriaNombre(prod.categoriaId) }}</span></td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div style="width: 8px; height: 8px; border-radius: 50%;" 
+                           [style.background]="prod.stockActual <= prod.stockMinimo ? '#c62828' : '#2e7d32'">
+                      </div>
+                      <span [style.color]="prod.stockActual <= prod.stockMinimo ? '#c62828' : 'inherit'" style="font-weight: 600;">
+                        {{ prod.stockActual }} {{ prod.unidadMedida }}
+                      </span>
+                    </div>
+                  </td>
+                  <td>{{ prod.stockMinimo }} {{ prod.unidadMedida }}</td>
+                  <td>${{ prod.precioVenta }}</td>
+                  <td>{{ prod.ubicacion || 'No definida' }}</td>
+                  <td>{{ prod.lote || 'N/A' }}</td>
+                  <td>
+                    <span [style.color]="isExpired(prod.fechaVencimiento) ? '#c62828' : 'inherit'">
+                      {{ prod.fechaVencimiento ? (prod.fechaVencimiento | date:'dd/MM/yyyy') : 'N/A' }}
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="productos.length === 0">
+                  <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    No hay datos de inventario disponibles
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIGURACIÓN (Settings) -->
+    <section *ngIf="activeSection === 'configuracion'" class="content-section">
+      <div class="section-header">
+        <h1><i class="fas fa-cog"></i> Configuración de Perfil</h1>
+        <div class="header-actions">
+          <button class="top-bar-btn" (click)="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-user-edit"></i> Información Personal</h5>
+        </div>
+        <div class="card-body">
+          <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            <!-- Foto -->
+            <div style="flex: 1; min-width: 200px; text-align: center; border-right: 1px solid var(--border-color); padding-right: 2rem;">
+              <div style="position: relative; display: inline-block;">
+                <img [src]="adminProfilePreview || adminUser.imagen || 'assets/images/Default.png'" 
+                     alt="Avatar" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-color);">
+                <label style="position: absolute; bottom: 5px; right: 5px; background: var(--accent-color); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                  <i class="fas fa-camera"></i>
+                  <input type="file" (change)="onAdminProfileImageSelected($event)" accept="image/*" hidden>
+                </label>
+              </div>
+              <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">Tamaño recomendado: 500x500px</p>
+            </div>
+
+            <!-- Form -->
+            <div style="flex: 3; min-width: 300px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                <div class="form-group">
+                  <label>Nombres</label>
+                  <input type="text" [(ngModel)]="adminUser.nombres" placeholder="Tus nombres">
+                </div>
+                <div class="form-group">
+                  <label>Apellidos</label>
+                  <input type="text" [(ngModel)]="adminUser.apellidos" placeholder="Tus apellidos">
+                </div>
+                <div class="form-group">
+                  <label>Correo Electrónico</label>
+                  <input type="email" [(ngModel)]="adminUser.correo" placeholder="admin@ejemplo.com">
+                </div>
+                <div class="form-group">
+                  <label>Teléfono</label>
+                  <input type="text" [(ngModel)]="adminUser.telefono" placeholder="Número de contacto">
+                </div>
+                <div class="form-group">
+                  <label>Dirección</label>
+                  <input type="text" [(ngModel)]="adminUser.direccion" placeholder="Dirección de residencia">
+                </div>
+                <div class="form-group">
+                  <label>Número Documento</label>
+                  <input type="text" [(ngModel)]="adminUser.numDocumento" placeholder="ID / Cédula">
+                </div>
+              </div>
+              <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+                <button class="btn-primary" (click)="guardarPerfilAdmin()">
+                  <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seguridad -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+        <div class="card">
+          <div class="card-header" style="background: #fff8e1; color: #f57f17; border-bottom: 1px solid #ffecb3;">
+            <h5><i class="fas fa-shield-alt"></i> Seguridad</h5>
+          </div>
+          <div class="card-body" style="text-align: center;">
+            <p>Se recomienda cambiar tu contraseña cada 3 meses.</p>
+            <button class="btn-secondary" style="border-color: #f57f17; color: #f57f17; background: white;" (click)="cambiarContrasena()">
+              <i class="fas fa-key"></i> Cambiar Contraseña
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="background: #ffebee; color: #c62828; border-bottom: 1px solid #ffcdd2;">
+            <h5><i class="fas fa-exclamation-triangle"></i> Zona de Peligro</h5>
+          </div>
+          <div class="card-body" style="text-align: center;">
+            <p>La desactivación de cuenta es una acción reversible por un Super Admin.</p>
+            <button class="btn-secondary" style="border-color: #c62828; color: #c62828; background: white;" (click)="eliminarCuentaAdmin()">
+              <i class="fas fa-user-slash"></i> Desactivar mi Cuenta
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -413,6 +783,346 @@
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeEditUserModal()">Cancelar</button>
         <button class="btn-primary" (click)="guardarEdicionUsuario()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modales de Veterinarias -->
+  <div class="modal-overlay" *ngIf="showAddVeterinariaModal" (click)="closeAddVeterinariaModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Registrar Veterinaria</h3>
+        <button class="close-btn" (click)="closeAddVeterinariaModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre *</label>
+            <input type="text" [(ngModel)]="newVeterinaria.nombre" placeholder="Ej: Clínica Veterinaria San Francisco">
+          </div>
+          <div class="form-group">
+            <label>NIT / RUT *</label>
+            <input type="text" [(ngModel)]="newVeterinaria.rut" placeholder="Ej: 76.123.456-7">
+          </div>
+          <div class="form-group">
+            <label>Teléfono *</label>
+            <input type="tel" [(ngModel)]="newVeterinaria.telefono" placeholder="Ej: +57 300 123 4567">
+          </div>
+          <div class="form-group full">
+            <label>Dirección *</label>
+            <input type="text" [(ngModel)]="newVeterinaria.direccion" placeholder="Ej: Calle Principal #123">
+          </div>
+          <div class="form-group full">
+            <label>Correo Electrónico *</label>
+            <input type="email" [(ngModel)]="newVeterinaria.email" placeholder="Ej: contacto@veterinaria.com">
+          </div>
+          <div class="form-group full">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="newVeterinaria.descripcion" rows="3" placeholder="Descripción de la veterinaria y sus servicios..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddVeterinariaModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarVeterinaria()">Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showEditVeterinariaModal" (click)="closeEditVeterinariaModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Editar Veterinaria</h3>
+        <button class="close-btn" (click)="closeEditVeterinariaModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre *</label>
+            <input type="text" [(ngModel)]="editingVeterinaria.nombre">
+          </div>
+          <div class="form-group">
+            <label>NIT / RUT *</label>
+            <input type="text" [(ngModel)]="editingVeterinaria.rut">
+          </div>
+          <div class="form-group">
+            <label>Teléfono *</label>
+            <input type="tel" [(ngModel)]="editingVeterinaria.telefono">
+          </div>
+          <div class="form-group full">
+            <label>Dirección *</label>
+            <input type="text" [(ngModel)]="editingVeterinaria.direccion">
+          </div>
+          <div class="form-group full">
+            <label>Correo Electrónico *</label>
+            <input type="email" [(ngModel)]="editingVeterinaria.email">
+          </div>
+          <div class="form-group full">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="editingVeterinaria.descripcion" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeEditVeterinariaModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarEdicionVeterinaria()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modales de Productos -->
+  <div class="modal-overlay" *ngIf="showAddProductoModal" (click)="closeAddProductoModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Nuevo Producto</h3>
+        <button class="close-btn" (click)="closeAddProductoModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre *</label>
+            <input type="text" [(ngModel)]="newProducto.nombre" placeholder="Ej: Ivermectina 1%">
+          </div>
+          <div class="form-group">
+            <label>Categoría *</label>
+            <select [(ngModel)]="newProducto.categoriaId">
+              <option [ngValue]="0">Seleccionar Categoría</option>
+              <option *ngFor="let cat of categorias" [ngValue]="cat.id">{{ cat.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Veterinaria *</label>
+            <select [(ngModel)]="newProducto.veterinariaId">
+              <option [ngValue]="0">Seleccionar Veterinaria</option>
+              <option *ngFor="let vet of veterinarias" [ngValue]="vet.id">{{ vet.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Código de Barras</label>
+            <input type="text" [(ngModel)]="newProducto.codigoBarras" placeholder="SKU-123">
+          </div>
+          <div class="form-group">
+            <label>Unidad de Medida</label>
+            <select [(ngModel)]="newProducto.unidadMedida">
+              <option value="unidades">Unidades</option>
+              <option value="ml">ml</option>
+              <option value="mg">mg</option>
+              <option value="tabletas">Tabletas</option>
+              <option value="capsulas">Cápsulas</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="l">l</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stock Actual *</label>
+            <input type="number" [(ngModel)]="newProducto.stockActual">
+          </div>
+          <div class="form-group">
+            <label>Stock Mínimo *</label>
+            <input type="number" [(ngModel)]="newProducto.stockMinimo">
+          </div>
+          <div class="form-group">
+            <label>Precio Compra *</label>
+            <input type="number" [(ngModel)]="newProducto.precioCompra">
+          </div>
+          <div class="form-group">
+            <label>Precio Venta *</label>
+            <input type="number" [(ngModel)]="newProducto.precioVenta">
+          </div>
+          <div class="form-group">
+            <label>Lote</label>
+            <input type="text" [(ngModel)]="newProducto.lote">
+          </div>
+          <div class="form-group">
+            <label>Fecha Vencimiento</label>
+            <input type="date" [(ngModel)]="newProducto.fechaVencimiento">
+          </div>
+          <div class="form-group full">
+            <label>Descripción *</label>
+            <textarea [(ngModel)]="newProducto.descripcion" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddProductoModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarProducto()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showEditProductoModal" (click)="closeEditProductoModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Editar Producto</h3>
+        <button class="close-btn" (click)="closeEditProductoModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre *</label>
+            <input type="text" [(ngModel)]="editingProducto.nombre">
+          </div>
+          <div class="form-group">
+            <label>Categoría *</label>
+            <select [(ngModel)]="editingProducto.categoriaId">
+              <option *ngFor="let cat of categorias" [ngValue]="cat.id">{{ cat.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Veterinaria *</label>
+            <select [(ngModel)]="editingProducto.veterinariaId">
+              <option *ngFor="let vet of veterinarias" [ngValue]="vet.id">{{ vet.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Código de Barras</label>
+            <input type="text" [(ngModel)]="editingProducto.codigoBarras">
+          </div>
+          <div class="form-group">
+            <label>Unidad de Medida</label>
+            <select [(ngModel)]="editingProducto.unidadMedida">
+              <option value="unidades">Unidades</option>
+              <option value="ml">ml</option>
+              <option value="mg">mg</option>
+              <option value="tabletas">Tabletas</option>
+              <option value="capsulas">Cápsulas</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="l">l</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stock Actual *</label>
+            <input type="number" [(ngModel)]="editingProducto.stockActual">
+          </div>
+          <div class="form-group">
+            <label>Stock Mínimo *</label>
+            <input type="number" [(ngModel)]="editingProducto.stockMinimo">
+          </div>
+          <div class="form-group">
+            <label>Precio Compra *</label>
+            <input type="number" [(ngModel)]="editingProducto.precioCompra">
+          </div>
+          <div class="form-group">
+            <label>Precio Venta *</label>
+            <input type="number" [(ngModel)]="editingProducto.precioVenta">
+          </div>
+          <div class="form-group">
+            <label>Lote</label>
+            <input type="text" [(ngModel)]="editingProducto.lote">
+          </div>
+          <div class="form-group">
+            <label>Fecha Vencimiento</label>
+            <input type="date" [(ngModel)]="editingProducto.fechaVencimiento">
+          </div>
+          <div class="form-group full">
+            <label>Descripción *</label>
+            <textarea [(ngModel)]="editingProducto.descripcion" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeEditProductoModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarEdicionProducto()">Actualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Categoría -->
+  <div class="modal-backdrop" *ngIf="showAddCategoriaModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Registrar Nueva Categoría</h2>
+        <button class="close-btn" (click)="closeAddCategoriaModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form (ngSubmit)="guardarCategoria()">
+          <div class="modal-flex">
+            <!-- Lado Visual (Decorativo/Color) -->
+            <div class="modal-image-col">
+              <div class="image-upload-wrapper" [style.background]="newCategoria.color" 
+                   style="display: flex; align-items: center; justify-content: center; border-radius: 20px;">
+                <i class="fas fa-tags" style="font-size: 4rem; color: white; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));"></i>
+              </div>
+              <div class="form-group" style="margin-top: 1.5rem;">
+                <label>Color Distintivo</label>
+                <input type="color" [(ngModel)]="newCategoria.color" name="color" style="height: 50px; cursor: pointer;">
+              </div>
+            </div>
+
+            <!-- Datos -->
+            <div class="modal-data-col">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Nombre de Categoría</label>
+                  <input type="text" [(ngModel)]="newCategoria.nombre" name="nombre" placeholder="Ej: Alimentos" required>
+                </div>
+                <div class="form-group">
+                  <label>Código Interno</label>
+                  <input type="text" [(ngModel)]="newCategoria.codigo" name="codigo" placeholder="Ej: CAT-001" required>
+                </div>
+                <div class="form-group full-width">
+                  <label>Descripción</label>
+                  <textarea [(ngModel)]="newCategoria.descripcion" name="descripcion" placeholder="Escribe una breve descripción..." rows="4"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeAddCategoriaModal()">Cancelar</button>
+            <button type="submit" class="btn-primary">Registrar Categoría</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Categoría -->
+  <div class="modal-backdrop" *ngIf="showEditCategoriaModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Editar Categoría</h2>
+        <button class="close-btn" (click)="closeEditCategoriaModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form (ngSubmit)="guardarEdicionCategoria()">
+          <div class="modal-flex">
+            <!-- Lado Visual -->
+            <div class="modal-image-col">
+              <div class="image-upload-wrapper" [style.background]="editingCategoria.color" 
+                   style="display: flex; align-items: center; justify-content: center; border-radius: 20px;">
+                <i class="fas fa-tags" style="font-size: 4rem; color: white; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));"></i>
+              </div>
+              <div class="form-group" style="margin-top: 1.5rem;">
+                <label>Color Distintivo</label>
+                <input type="color" [(ngModel)]="editingCategoria.color" name="color" style="height: 50px; cursor: pointer;">
+              </div>
+            </div>
+
+            <!-- Datos -->
+            <div class="modal-data-col">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Nombre</label>
+                  <input type="text" [(ngModel)]="editingCategoria.nombre" name="nombre" required>
+                </div>
+                <div class="form-group">
+                  <label>Código</label>
+                  <input type="text" [(ngModel)]="editingCategoria.codigo" name="codigo" required>
+                </div>
+                <div class="form-group full-width">
+                  <label>Descripción</label>
+                  <textarea [(ngModel)]="editingCategoria.descripcion" name="descripcion" rows="4"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeEditCategoriaModal()">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar Cambios</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

@@ -158,6 +158,7 @@ export class Adopcion implements OnInit {
   }
 
   cerrarSesion(): void {
+    this.authService.logout();
     this.themeService.setDarkMode(false);
     this.router.navigate(['/login']);
   }

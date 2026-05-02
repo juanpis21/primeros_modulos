@@ -5,6 +5,9 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { UsersService } from '../../../core/services/users.service';
 import { ServiciosService, Servicio } from '../../../core/services/servicios.service';
+import { VeterinariasService, Veterinaria } from '../../../core/services/veterinarias.service';
+import { ProductosService, Producto } from '../../../core/services/productos.service';
+import { CategoriasService, Categoria } from '../../../core/services/categorias.service';
 import { RolesService, Role } from '../../../core/services/roles.service';
 import { ThemeService } from '../../../core/services/theme.service';
 
@@ -20,9 +23,27 @@ export class AdminModulesComponent implements OnInit {
   sidebarOpen: boolean = true;
   usuarios: any[] = [];
   servicios: Servicio[] = [];
+  veterinarias: Veterinaria[] = [];
+  productos: Producto[] = [];
+  categorias: Categoria[] = [];
   roles: Role[] = [];
   isLoading: boolean = false;
   showOnlyInactive: boolean = false;
+
+  // Configuración Admin
+  adminUser: any = {
+    nombres: '',
+    apellidos: '',
+    correo: '',
+    telefono: '',
+    edad: 0,
+    direccion: '',
+    tipoDocumento: '',
+    numDocumento: '',
+    imagen: ''
+  };
+  adminProfilePreview: string | null = null;
+  selectedAdminFile: File | null = null;
 
   // Modales Usuarios
   showAddUserModal: boolean = false;
@@ -43,6 +64,28 @@ export class AdminModulesComponent implements OnInit {
   showAddServiceModal: boolean = false;
   showEditServiceModal: boolean = false;
 
+  // Modales Veterinarias
+  showAddVeterinariaModal: boolean = false;
+  showEditVeterinariaModal: boolean = false;
+
+  // Modales Productos
+  showAddProductoModal: boolean = false;
+  showEditProductoModal: boolean = false;
+
+  // Modales Categorías
+  showAddCategoriaModal: boolean = false;
+  showEditCategoriaModal: boolean = false;
+
+  newCategoria: Partial<Categoria> = {
+    nombre: '',
+    descripcion: '',
+    codigo: '',
+    color: '#4ade80',
+    isActive: true
+  };
+
+  editingCategoria: Partial<Categoria> = {};
+
   newService: Partial<Servicio> = {
     nombre: '',
     tipoServicio: '',
@@ -54,6 +97,35 @@ export class AdminModulesComponent implements OnInit {
   };
 
   editingService: Partial<Servicio> = {};
+
+  newVeterinaria: Partial<Veterinaria> = {
+    nombre: '',
+    direccion: '',
+    telefono: '',
+    email: '',
+    rut: '',
+    descripcion: '',
+    isActive: true
+  };
+
+  editingVeterinaria: Partial<Veterinaria> = {};
+
+  newProducto: Partial<Producto> = {
+    nombre: '',
+    descripcion: '',
+    codigoBarras: '',
+    stockActual: 0,
+    stockMinimo: 5,
+    precioCompra: 0,
+    precioVenta: 0,
+    unidadMedida: 'unidades',
+    categoriaId: 0,
+    veterinariaId: 0,
+    isActive: true
+  };
+
+  editingProducto: Partial<Producto> = {};
+
   selectedFile: File | null = null;
   imagePreview: string | null = null;
   baseUrl: string = 'http://localhost:3000';
@@ -62,6 +134,9 @@ export class AdminModulesComponent implements OnInit {
     private authService: AuthService,
     private usersService: UsersService,
     private serviciosService: ServiciosService,
+    private veterinariasService: VeterinariasService,
+    private productosService: ProductosService,
+    private categoriasService: CategoriasService,
     private rolesService: RolesService,
     private themeService: ThemeService,
     private router: Router
@@ -70,7 +145,11 @@ export class AdminModulesComponent implements OnInit {
   ngOnInit(): void {
     this.cargarUsuarios();
     this.cargarServicios();
+    this.cargarVeterinarias();
+    this.cargarProductos();
+    this.cargarCategorias();
     this.cargarRoles();
+    this.loadAdminProfile();
   }
 
   toggleSidebar(): void {
@@ -315,5 +394,423 @@ export class AdminModulesComponent implements OnInit {
       next: () => this.cargarServicios(),
       error: (err) => alert('Error al cambiar estado: ' + err.message)
     });
+  }
+
+  // ========== CRUD VETERINARIAS ==========
+  cargarVeterinarias(): void {
+    this.veterinariasService.getAll().subscribe({
+      next: (data) => this.veterinarias = data,
+      error: (err) => console.error('Error al cargar veterinarias:', err)
+    });
+  }
+
+  openAddVeterinariaModal(): void {
+    this.showAddVeterinariaModal = true;
+  }
+
+  closeAddVeterinariaModal(): void {
+    this.showAddVeterinariaModal = false;
+    this.newVeterinaria = {
+      nombre: '',
+      direccion: '',
+      telefono: '',
+      email: '',
+      rut: '',
+      descripcion: '',
+      isActive: true
+    };
+  }
+
+  guardarVeterinaria(): void {
+    if (!this.newVeterinaria.nombre || !this.newVeterinaria.direccion || !this.newVeterinaria.telefono || !this.newVeterinaria.email || !this.newVeterinaria.rut) {
+      alert('Por favor, completa los campos obligatorios');
+      return;
+    }
+
+    this.veterinariasService.create(this.newVeterinaria).subscribe({
+      next: () => {
+        this.closeAddVeterinariaModal();
+        this.cargarVeterinarias();
+        alert('Veterinaria registrada correctamente');
+      },
+      error: (err) => alert('Error al registrar veterinaria: ' + (err.error?.message || err.message))
+    });
+  }
+
+  openEditVeterinariaModal(vet: Veterinaria): void {
+    this.editingVeterinaria = { ...vet };
+    this.showEditVeterinariaModal = true;
+  }
+
+  closeEditVeterinariaModal(): void {
+    this.showEditVeterinariaModal = false;
+    this.editingVeterinaria = {};
+  }
+
+  guardarEdicionVeterinaria(): void {
+    if (!this.editingVeterinaria.id) return;
+
+    const { id, createdAt, updatedAt, ...updateData } = this.editingVeterinaria as any;
+
+    this.veterinariasService.update(this.editingVeterinaria.id, updateData).subscribe({
+      next: () => {
+        this.closeEditVeterinariaModal();
+        this.cargarVeterinarias();
+        alert('Veterinaria actualizada correctamente');
+      },
+      error: (err) => alert('Error al actualizar veterinaria: ' + (err.error?.message || err.message))
+    });
+  }
+
+  toggleEstadoVeterinaria(vet: Veterinaria): void {
+    const nuevoEstado = !vet.isActive;
+    this.veterinariasService.update(vet.id, { isActive: nuevoEstado }).subscribe({
+      next: () => this.cargarVeterinarias(),
+      error: (err) => alert('Error al cambiar estado: ' + (err.error?.message || err.message))
+    });
+  }
+
+  eliminarVeterinaria(vet: Veterinaria): void {
+    if (confirm(`¿Estás seguro de que quieres eliminar la veterinaria "${vet.nombre}"?`)) {
+      this.veterinariasService.delete(vet.id).subscribe({
+        next: () => {
+          this.cargarVeterinarias();
+          alert('Veterinaria eliminada correctamente');
+        },
+        error: (err) => alert('Error al eliminar veterinaria: ' + (err.error?.message || err.message))
+      });
+    }
+  }
+
+  // ========== CRUD PRODUCTOS ==========
+  cargarProductos(): void {
+    this.productosService.getAll().subscribe({
+      next: (data) => this.productos = data,
+      error: (err) => console.error('Error al cargar productos:', err)
+    });
+  }
+
+  cargarCategorias(): void {
+    this.categoriasService.getAll().subscribe({
+      next: (data) => this.categorias = data,
+      error: (err) => console.error('Error al cargar categorías:', err)
+    });
+  }
+
+  openAddProductoModal(): void {
+    this.showAddProductoModal = true;
+  }
+
+  closeAddProductoModal(): void {
+    this.showAddProductoModal = false;
+    this.newProducto = {
+      nombre: '',
+      descripcion: '',
+      codigoBarras: '',
+      stockActual: 0,
+      stockMinimo: 5,
+      precioCompra: 0,
+      precioVenta: 0,
+      unidadMedida: 'unidades',
+      categoriaId: 0,
+      veterinariaId: 0,
+      isActive: true
+    };
+  }
+
+  guardarProducto(): void {
+    if (!this.newProducto.nombre || !this.newProducto.descripcion || !this.newProducto.categoriaId || !this.newProducto.veterinariaId) {
+      alert('Por favor, completa los campos obligatorios');
+      return;
+    }
+
+    // Asegurar que los tipos sean correctos para el DTO del backend
+    const payload = {
+      ...this.newProducto,
+      categoriaId: Number(this.newProducto.categoriaId),
+      veterinariaId: Number(this.newProducto.veterinariaId),
+      stockActual: Number(this.newProducto.stockActual || 0),
+      stockMinimo: Number(this.newProducto.stockMinimo || 0),
+      precioCompra: Number(this.newProducto.precioCompra || 0),
+      precioVenta: Number(this.newProducto.precioVenta || 0),
+    };
+
+    // Limpiar campos opcionales vacíos
+    if (!payload.codigoBarras) delete payload.codigoBarras;
+    if (!payload.lote) delete payload.lote;
+    if (!payload.ubicacion) delete payload.ubicacion;
+    if (!payload.fechaVencimiento) delete payload.fechaVencimiento;
+
+    this.productosService.create(payload).subscribe({
+      next: () => {
+        this.closeAddProductoModal();
+        this.cargarProductos();
+        alert('Producto registrado correctamente');
+      },
+      error: (err) => {
+        console.error('Error al registrar producto:', err);
+        const errorMsg = err.error?.message;
+        const detail = Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg;
+        alert('Error al registrar producto: ' + (detail || err.message));
+      }
+    });
+  }
+
+  openEditProductoModal(prod: Producto): void {
+    this.editingProducto = { ...prod };
+    this.showEditProductoModal = true;
+  }
+
+  closeEditProductoModal(): void {
+    this.showEditProductoModal = false;
+    this.editingProducto = {};
+  }
+
+  guardarEdicionProducto(): void {
+    if (!this.editingProducto.id) return;
+
+    // Limpiar objeto y asegurar tipos
+    const raw = this.editingProducto as any;
+    const updateData = {
+      nombre: raw.nombre,
+      descripcion: raw.descripcion,
+      codigoBarras: raw.codigoBarras,
+      stockActual: Number(raw.stockActual),
+      stockMinimo: Number(raw.stockMinimo),
+      precioCompra: Number(raw.precioCompra),
+      precioVenta: Number(raw.precioVenta),
+      unidadMedida: raw.unidadMedida,
+      lote: raw.lote,
+      ubicacion: raw.ubicacion,
+      fechaVencimiento: raw.fechaVencimiento,
+      categoriaId: Number(raw.categoriaId),
+      veterinariaId: Number(raw.veterinariaId),
+      isActive: raw.isActive
+    };
+
+    // Limpiar opcionales vacíos
+    if (!updateData.codigoBarras) delete updateData.codigoBarras;
+    if (!updateData.lote) delete updateData.lote;
+    if (!updateData.ubicacion) delete updateData.ubicacion;
+    if (!updateData.fechaVencimiento) delete updateData.fechaVencimiento;
+
+    this.productosService.update(this.editingProducto.id, updateData).subscribe({
+      next: () => {
+        this.closeEditProductoModal();
+        this.cargarProductos();
+        alert('Producto actualizado correctamente');
+      },
+      error: (err) => {
+        console.error('Error al actualizar producto:', err);
+        const errorMsg = err.error?.message;
+        const detail = Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg;
+        alert('Error al actualizar producto: ' + (detail || err.message));
+      }
+    });
+  }
+
+  toggleEstadoProducto(prod: Producto): void {
+    const nuevoEstado = !prod.isActive;
+    this.productosService.update(prod.id, { isActive: nuevoEstado }).subscribe({
+      next: () => this.cargarProductos(),
+      error: (err) => alert('Error al cambiar estado: ' + (err.error?.message || err.message))
+    });
+  }
+
+  eliminarProducto(prod: Producto): void {
+    if (confirm(`¿Estás seguro de que quieres eliminar el producto "${prod.nombre}"?`)) {
+      this.productosService.delete(prod.id).subscribe({
+        next: () => {
+          this.cargarProductos();
+          alert('Producto eliminado correctamente');
+        },
+        error: (err) => alert('Error al eliminar producto: ' + (err.error?.message || err.message))
+      });
+    }
+  }
+
+  getCategoriaNombre(categoriaId: number): string {
+    const cat = this.categorias.find(c => c.id === categoriaId);
+    return cat ? cat.nombre : 'Sin categoría';
+  }
+
+  getVeterinariaNombre(veterinariaId: number): string {
+    const vet = this.veterinarias.find(v => v.id === veterinariaId);
+    return vet ? vet.nombre : 'Sin veterinaria';
+  }
+
+  isExpired(date: string | undefined): boolean {
+    if (!date) return false;
+    const expirationDate = new Date(date);
+    const today = new Date();
+    return expirationDate < today;
+  }
+
+  // ========== CRUD CATEGORÍAS ==========
+  openAddCategoriaModal(): void {
+    this.showAddCategoriaModal = true;
+  }
+
+  closeAddCategoriaModal(): void {
+    this.showAddCategoriaModal = false;
+    this.newCategoria = { nombre: '', descripcion: '', codigo: '', color: '#4ade80', isActive: true };
+  }
+
+  guardarCategoria(): void {
+    if (!this.newCategoria.nombre || !this.newCategoria.codigo) {
+      alert('Por favor, completa los campos obligatorios (Nombre y Código)');
+      return;
+    }
+
+    this.categoriasService.create(this.newCategoria).subscribe({
+      next: () => {
+        this.closeAddCategoriaModal();
+        this.cargarCategorias();
+        alert('Categoría registrada correctamente');
+      },
+      error: (err) => alert('Error al registrar categoría: ' + (err.error?.message || err.message))
+    });
+  }
+
+  openEditCategoriaModal(cat: Categoria): void {
+    this.editingCategoria = { ...cat };
+    this.showEditCategoriaModal = true;
+  }
+
+  closeEditCategoriaModal(): void {
+    this.showEditCategoriaModal = false;
+    this.editingCategoria = {};
+  }
+
+  guardarEdicionCategoria(): void {
+    if (!this.editingCategoria.id) return;
+    const { id, createdAt, updatedAt, ...updateData } = this.editingCategoria as any;
+
+    this.categoriasService.update(this.editingCategoria.id, updateData).subscribe({
+      next: () => {
+        this.closeEditCategoriaModal();
+        this.cargarCategorias();
+        alert('Categoría actualizada correctamente');
+      },
+      error: (err) => alert('Error al actualizar categoría: ' + (err.error?.message || err.message))
+    });
+  }
+
+  toggleEstadoCategoria(cat: Categoria): void {
+    const nuevoEstado = !cat.isActive;
+    this.categoriasService.update(cat.id, { isActive: nuevoEstado }).subscribe({
+      next: () => this.cargarCategorias(),
+      error: (err) => alert('Error al cambiar estado: ' + (err.error?.message || err.message))
+    });
+  }
+
+  eliminarCategoria(cat: Categoria): void {
+    if (confirm(`¿Estás seguro de que quieres eliminar la categoría "${cat.nombre}"?`)) {
+      this.categoriasService.delete(cat.id).subscribe({
+        next: () => {
+          this.cargarCategorias();
+          alert('Categoría eliminada correctamente');
+        },
+        error: (err) => alert('Error al eliminar categoría: ' + (err.error?.message || err.message))
+      });
+    }
+  }
+
+  // CONFIGURACIÓN ADMIN
+  loadAdminProfile(): void {
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      const avatar = currentUser.avatar || '';
+      this.adminUser = {
+        id: currentUser.id,
+        nombres: currentUser.firstName || '',
+        apellidos: currentUser.lastName || '',
+        correo: currentUser.email || '',
+        telefono: currentUser.phone || '',
+        edad: currentUser.age || 0,
+        direccion: currentUser.address || '',
+        tipoDocumento: currentUser.documentType || '',
+        numDocumento: currentUser.documentNumber || '',
+        imagen: avatar && avatar.startsWith('/uploads/') ? `${this.baseUrl}${avatar}` : avatar,
+        roleId: currentUser.roleId
+      };
+    }
+  }
+
+  onAdminProfileImageSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedAdminFile = file;
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.adminProfilePreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  guardarPerfilAdmin(): void {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      alert('❌ No hay usuario autenticado');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('fullName', `${this.adminUser.nombres} ${this.adminUser.apellidos}`.trim());
+    formData.append('firstName', this.adminUser.nombres);
+    formData.append('lastName', this.adminUser.apellidos);
+    formData.append('email', this.adminUser.correo);
+    formData.append('phone', this.adminUser.telefono || '');
+    formData.append('age', String(this.adminUser.edad || ''));
+    formData.append('address', this.adminUser.direccion || '');
+    formData.append('documentType', this.adminUser.tipoDocumento || '');
+    formData.append('documentNumber', this.adminUser.numDocumento || '');
+    
+    if (this.selectedAdminFile) {
+      formData.append('avatar', this.selectedAdminFile, this.selectedAdminFile.name);
+    }
+
+    this.usersService.updateUser(currentUser.id, formData).subscribe({
+      next: (response) => {
+        this.authService.updateCurrentUser(response);
+        this.selectedAdminFile = null;
+        this.loadAdminProfile();
+        alert('✅ Perfil actualizado correctamente');
+      },
+      error: (error) => {
+        alert('❌ Error al actualizar el perfil: ' + (error.error?.message || 'Error desconocido'));
+        console.error('Update profile error:', error);
+      }
+    });
+  }
+
+  getAdminRoleName(): string {
+    const roleMap: { [key: number]: string } = {
+      1: 'Administrador',
+      2: 'Super Administrador',
+      3: 'Veterinario',
+      4: 'Usuario'
+    };
+    return roleMap[this.adminUser.roleId || 1] || 'Administrador';
+  }
+
+  cambiarContrasena(): void {
+    alert('Funcionalidad de cambio de contraseña próximamente disponible.');
+  }
+
+  eliminarCuentaAdmin(): void {
+    if (confirm('¿Estás seguro de que deseas desactivar tu cuenta de administrador?')) {
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser) {
+        this.usersService.deleteUser(currentUser.id).subscribe({
+          next: () => {
+            alert('Cuenta desactivada exitosamente.');
+            this.logout();
+          },
+          error: (err) => alert('Error al desactivar cuenta: ' + (err.error?.message || err.message))
+        });
+      }
+    }
   }
 }

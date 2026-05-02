@@ -374,6 +374,7 @@ export class Inicio implements OnInit {
   }
 
   logout(): void {
+    this.authService.logout();
     this.menuAbierto = false;
     this.usuarioLogueado = null;
     this.themeService.setDarkMode(false);

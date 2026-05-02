@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -240,6 +240,7 @@ export class PerfilUsuario implements OnInit {
   }
 
   cerrarSesion(): void {
+    this.authService.logout();
     this.themeService.setDarkMode(false);
     this.router.navigate(['/login']);
   }

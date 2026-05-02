@@ -317,6 +317,8 @@
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
+  background: #fef2f2;
+  color: #c62828;
   &.active { background: #e8f5e9; color: #2e7d32; }
 }
 
@@ -342,6 +344,21 @@
   gap: 0.5rem;
   transition: all 0.2s;
   &:hover { opacity: 0.9; transform: translateY(-1px); }
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  &:hover { background: var(--border-color); }
 }
 
 .actions { display: flex; gap: 0.5rem; }

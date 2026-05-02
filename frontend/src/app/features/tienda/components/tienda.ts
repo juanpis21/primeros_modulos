@@ -4,6 +4,10 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../../../core/services/theme.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { VeterinariasService } from '../../../core/services/veterinarias.service';
+import { ProductosService } from '../../../core/services/productos.service';
+import { CategoriasService } from '../../../core/services/categorias.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -27,78 +31,14 @@ export class Tienda implements OnInit, OnDestroy {
   currentUser: any = null;
 
   // Datos
-  tiendas: any[] = [
-    {
-      id: 1,
-      nombre: 'PetShop Central',
-      direccion: 'Calle 123 #45-67, Duitama',
-      telefono: '8 123 4567',
-      horario: 'Lun-Sáb: 8:00 AM - 8:00 PM',
-      estado: 'Activo'
-    },
-    {
-      id: 2,
-      nombre: 'Veterinaria Mascotas Felices',
-      direccion: 'Av. Principal #89-10, Duitama',
-      telefono: '8 234 5678',
-      horario: 'Lun-Dom: 9:00 AM - 7:00 PM',
-      estado: 'Activo'
-    },
-    {
-      id: 3,
-      nombre: 'Tienda Animal World',
-      direccion: 'Carrera 15 #32-45, Duitama',
-      telefono: '8 345 6789',
-      horario: 'Lun-Sáb: 10:00 AM - 6:00 PM',
-      estado: 'Activo'
-    }
-  ];
+  // Datos reales
+  tiendas: any[] = [];
   tiendaSeleccionada: any = null;
-  productos: any[] = [
-    {
-      id: 1,
-      nombre: 'Alimento Premium para Perros',
-      descripcion: 'Alimento balanceado de alta calidad para perros adultos',
-      precio: 45000,
-      categoria: 'food',
-      imagen: 'assets/IMG/default.png'
-    },
-    {
-      id: 2,
-      nombre: 'Juguete Peluche Gato',
-      descripcion: 'Peluche suave y resistente para gatos',
-      precio: 15000,
-      categoria: 'accessories',
-      imagen: 'assets/IMG/default.png'
-    },
-    {
-      id: 3,
-      nombre: 'Vitaminas para Mascotas',
-      descripcion: 'Suplemento vitamínico completo',
-      precio: 28000,
-      categoria: 'medicine',
-      imagen: 'assets/IMG/default.png'
-    },
-    {
-      id: 4,
-      nombre: 'Correa Ajustable',
-      descripcion: 'Correa resistente con ajuste de longitud',
-      precio: 22000,
-      categoria: 'accessories',
-      imagen: 'assets/IMG/default.png'
-    },
-    {
-      id: 5,
-      nombre: 'Alimento Gato Adulto',
-      descripcion: 'Nutrición completa para gatos adultos',
-      precio: 38000,
-      categoria: 'food',
-      imagen: 'assets/IMG/default.png'
-    }
-  ];
+  productos: any[] = [];
   carrito: any[] = [];
 
   // Filtros
+  categorias: any[] = [];
   filtroCategoria: string = 'all';
   filtroOrden: string = 'featured';
 
@@ -108,16 +48,23 @@ export class Tienda implements OnInit, OnDestroy {
   // Carrito
   carritoVisible: boolean = false;
 
-  constructor(private http: HttpClient, private themeService: ThemeService, private router: Router) {}
+  constructor(
+    private http: HttpClient, 
+    private themeService: ThemeService, 
+    private authService: AuthService,
+    private veterinariasService: VeterinariasService,
+    private productosService: ProductosService,
+    private categoriasService: CategoriasService,
+    private router: Router
+  ) {}
 
   // Intervalo para el carrusel
   private carouselInterval: any;
 
   ngOnInit(): void {
     this.cargarUsuario();
-    // Comentado para usar datos de ejemplo
-    // this.cargarTiendas();
-    console.log('✅ Usando datos de ejemplo');
+    this.cargarTiendas();
+    this.cargarCategorias();
 
     // Sincronizar modo oscuro con ThemeService
     this.themeSub = this.themeService.darkMode$.subscribe(isDark => {
@@ -145,23 +92,21 @@ export class Tienda implements OnInit, OnDestroy {
 
   // ===== FUNCIONES DE TIENDAS =====
   cargarTiendas(): void {
-    this.http.get<any[]>('/usuarios/api/veterinarias').subscribe({
+    this.veterinariasService.getAll().subscribe({
       next: (tiendas) => {
-        this.tiendas = tiendas;
-        console.log('✅ Tiendas cargadas:', tiendas);
+        this.tiendas = tiendas.map(t => ({
+          ...t,
+          horario: 'Lun-Sáb: 8:00 AM - 7:00 PM', // Placeholder
+          estado: t.isActive ? 'Activo' : 'Cerrado'
+        }));
       },
-      error: (error) => {
-        console.error('❌ Error al cargar tiendas:', error);
-      }
+      error: (error) => console.error('❌ Error al cargar tiendas:', error)
     });
   }
 
   seleccionarTienda(tienda: any): void {
     this.tiendaSeleccionada = tienda;
-    console.log(`🏪 Tienda seleccionada: ${tienda.nombre} (ID: ${tienda.id})`);
-
-    // Comentado para usar datos de ejemplo
-    // this.cargarProductosTienda(tienda.id);
+    this.cargarProductosTienda(tienda.id);
 
     // Cambiar a vista de productos
     this.vista = 'productos';
@@ -187,20 +132,55 @@ export class Tienda implements OnInit, OnDestroy {
     console.log('🔙 Volviendo a la selección de tiendas');
   }
 
+  cargarCategorias(): void {
+    this.categoriasService.getAll().subscribe({
+      next: (data) => this.categorias = data,
+      error: (err) => console.error('Error al cargar categorías:', err)
+    });
+  }
+
   // ===== FUNCIONES DE PRODUCTOS =====
   cargarProductosTienda(tiendaId: number): void {
-    console.log(`🔍 Cargando productos de tienda ID: ${tiendaId}`);
-
-    this.http.get<any[]>(`/usuarios/api/veterinarias/${tiendaId}/productos`).subscribe({
-      next: (productos) => {
-        this.productos = productos;
-        console.log(`✅ Productos cargados: ${productos.length}`);
+    this.productosService.getAll().subscribe({
+      next: (allProducts) => {
+        this.productos = allProducts
+          .filter(p => p.veterinariaId === tiendaId && p.isActive)
+          .map(p => {
+            const cat = this.categorias.find(c => c.id === p.categoriaId);
+            return {
+              id: p.id,
+              nombre: p.nombre,
+              descripcion: p.descripcion,
+              precio: p.precioVenta,
+              categoria: cat ? cat.nombre : 'General',
+              categoriaId: p.categoriaId,
+              imagen: 'assets/IMG/default.png'
+            };
+          });
       },
       error: (error) => {
         console.error('❌ Error al cargar productos:', error);
         this.productos = [];
       }
     });
+  }
+
+  get filteredProducts(): any[] {
+    let filtered = [...this.productos];
+
+    if (this.filtroCategoria !== 'all') {
+      filtered = filtered.filter(p => p.categoria === this.filtroCategoria);
+    }
+
+    if (this.filtroOrden === 'price-low') {
+      filtered.sort((a, b) => a.precio - b.precio);
+    } else if (this.filtroOrden === 'price-high') {
+      filtered.sort((a, b) => b.precio - a.precio);
+    } else if (this.filtroOrden === 'name') {
+      filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }
+
+    return filtered;
   }
 
   // ===== FUNCIONES DE CARRITO =====
@@ -291,8 +271,7 @@ export class Tienda implements OnInit, OnDestroy {
 
   // ===== PERFIL =====
   logout(): void {
-    localStorage.removeItem('current_user');
-    localStorage.removeItem('access_token');
+    this.authService.logout();
     this.router.navigate(['/login']);
   }
 
