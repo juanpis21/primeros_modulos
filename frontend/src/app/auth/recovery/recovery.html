@@ -14,35 +14,71 @@
     <!-- DERECHA -->
     <div class="right-side">
 
-      <div class="mail-icon">✉️</div>
-
-      <h2>Recuperar contraseña</h2>
-
-      <p>
-        Te enviaremos un enlace a tu correo electrónico
-        para que puedas crear una nueva contraseña.
-      </p>
-
-      <div class="input-wrapper">
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          [(ngModel)]="email"
-        />
-        <span>📩</span>
+      <div class="mail-icon">
+        {{ mode === 'request' ? '✉️' : '🔒' }}
       </div>
 
-      <button (click)="onSubmit()" [disabled]="isLoading">
-        {{ isLoading ? 'Enviando...' : 'Enviar enlace' }}
-      </button>
+      <h2 *ngIf="mode === 'request'">Recuperar contraseña</h2>
+      <h2 *ngIf="mode === 'reset'">Restablecer contraseña</h2>
+      <h2 *ngIf="mode === 'change'">Cambiar contraseña</h2>
+
+      <p *ngIf="mode === 'request'">
+        Te enviaremos un enlace a tu correo electrónico
+        para que puedas restablecer tu contraseña.
+      </p>
+      <p *ngIf="isResetOrChange">
+        {{ mode === 'change' ? 'Ingresa tu nueva contraseña para actualizar tu cuenta.' : 'Ingresa tu nueva contraseña para asegurar tu cuenta.' }}
+      </p>
+
+      <form [formGroup]="recoveryForm" (ngSubmit)="onSubmit()">
+        <!-- Campo Email (Solo modo solicitud) -->
+        <div class="input-wrapper" *ngIf="mode === 'request'">
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            formControlName="email"
+          />
+          <span>📩</span>
+        </div>
+
+        <!-- Campos de Contraseña (Modo reset o change) -->
+        <div class="input-wrapper" *ngIf="isResetOrChange">
+          <input
+            type="password"
+            placeholder="Nueva contraseña"
+            formControlName="nuevaContrasena"
+          />
+          <span>🔒</span>
+        </div>
+
+        <div class="input-wrapper" *ngIf="isResetOrChange">
+          <input
+            type="password"
+            placeholder="Confirmar nueva contraseña"
+            formControlName="confirmarContrasena"
+          />
+          <span>✅</span>
+        </div>
+
+        <button type="submit" [disabled]="isLoading || (recoveryForm.invalid && recoveryForm.touched)">
+          <ng-container [ngSwitch]="mode">
+            <span *ngSwitchCase="'request'">{{ isLoading ? 'Enviando...' : 'Enviar enlace' }}</span>
+            <span *ngSwitchCase="'reset'">{{ isLoading ? 'Restableciendo...' : 'Restablecer contraseña' }}</span>
+            <span *ngSwitchCase="'change'">{{ isLoading ? 'Cambiando...' : 'Cambiar contraseña' }}</span>
+          </ng-container>
+        </button>
+      </form>
 
       <div *ngIf="message" class="message" [ngClass]="messageType">
         {{ message }}
       </div>
 
       <!-- VOLVER -->
-      <p class="login-link">
+      <p class="login-link" *ngIf="mode !== 'change'">
         ¿Recordaste tu contraseña? <a (click)="goToLogin()">Inicia sesión</a>
+      </p>
+      <p class="login-link" *ngIf="mode === 'change'">
+        <a (click)="goToProfile()">Volver al perfil</a>
       </p>
 
     </div>

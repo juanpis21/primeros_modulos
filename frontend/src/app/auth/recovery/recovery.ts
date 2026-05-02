@@ -1,89 +1,135 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { finalize, timeout } from 'rxjs/operators';
 import { RecoveryService } from '../../core/services/recovery.service';
+import { UsersService } from '../../core/services/users.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-recovery',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './recovery.html',
   styleUrl: './recovery.scss'
 })
 export class Recovery implements OnInit {
-  // Step 1: Request Token
-  email = '';
-  
-  // Step 2: Reset Password
-  token = '';
-  nuevaContrasena = '';
-  confirmarContrasena = '';
+  recoveryForm!: FormGroup;
+  mode: 'request' | 'reset' | 'change' = 'request';
   
   isLoading = false;
   message = '';
   messageType = ''; // 'success' or 'error'
-  isResetMode = false;
+  solicitudExitosa = false;
+  token = '';
 
   constructor(
+    private fb: FormBuilder,
     private recoveryService: RecoveryService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private usersService: UsersService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    console.log('RecoveryComponent loaded');
-    // Check if there is a token in the URL
+    this.initForm();
+    this.detectMode();
+  }
+
+  private initForm(): void {
+    this.recoveryForm = this.fb.group({
+      email: ['', [Validators.email]],
+      nuevaContrasena: ['', [Validators.minLength(6)]],
+      confirmarContrasena: ['', []]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  private detectMode(): void {
     this.route.queryParams.subscribe(params => {
       if (params['token']) {
         this.token = params['token'];
-        this.isResetMode = true;
+        this.mode = 'reset';
+        this.updateValidators();
+      } else if (params['mode'] === 'change') {
+        this.mode = 'change';
+        this.updateValidators();
+      } else {
+        this.mode = 'request';
+        this.updateValidators();
       }
     });
   }
 
-  onSubmit(): void {
-    if (this.isResetMode) {
-      this.handleResetPassword();
+  private updateValidators(): void {
+    const emailControl = this.recoveryForm.get('email');
+    const passwordControl = this.recoveryForm.get('nuevaContrasena');
+    const confirmControl = this.recoveryForm.get('confirmarContrasena');
+
+    if (this.mode === 'request') {
+      emailControl?.setValidators([Validators.required, Validators.email]);
+      passwordControl?.clearValidators();
+      confirmControl?.clearValidators();
     } else {
-      this.handleSolicitarRecuperacion();
+      emailControl?.clearValidators();
+      passwordControl?.setValidators([Validators.required, Validators.minLength(6)]);
+      confirmControl?.setValidators([Validators.required]);
     }
+    
+    emailControl?.updateValueAndValidity();
+    passwordControl?.updateValueAndValidity();
+    confirmControl?.updateValueAndValidity();
   }
 
-  handleSolicitarRecuperacion(): void {
-    if (!this.email) {
-      this.message = 'Por favor, ingresa tu correo electrónico';
+  private passwordMatchValidator(g: FormGroup) {
+    const password = g.get('nuevaContrasena')?.value;
+    const confirm = g.get('confirmarContrasena')?.value;
+    return password === confirm ? null : { mismatch: true };
+  }
+
+  get isResetOrChange(): boolean {
+    return this.mode === 'reset' || this.mode === 'change';
+  }
+
+  onSubmit(): void {
+    if (this.recoveryForm.invalid) {
+      if (this.recoveryForm.hasError('mismatch')) {
+        this.message = 'Las contraseñas no coinciden';
+      } else {
+        this.message = 'Por favor, completa los campos correctamente';
+      }
       this.messageType = 'error';
       return;
     }
 
+    if (this.mode === 'request') {
+      this.handleSolicitarRecuperacion();
+    } else if (this.mode === 'reset') {
+      this.handleResetPassword();
+    } else if (this.mode === 'change') {
+      this.handleChangePassword();
+    }
+  }
+
+  handleSolicitarRecuperacion(): void {
+    const email = this.recoveryForm.get('email')?.value;
     this.isLoading = true;
     this.message = '';
+    this.solicitudExitosa = false;
 
-    this.recoveryService.solicitarRecuperacion({ email: this.email })
+    this.recoveryService.solicitarRecuperacion({ email })
       .pipe(
         timeout(15000),
-        finalize(() => {
-          this.isLoading = false;
-        })
+        finalize(() => this.isLoading = false)
       )
       .subscribe({
-        next: (response) => {
-          console.log('Recovery success:', response);
-          const successMsg = '✅ ¡Código enviado! Revisa tu bandeja de entrada.';
-          this.message = successMsg;
+        next: () => {
+          this.message = '✅ Se ha enviado un enlace a tu correo electrónico. Por favor, revísalo para continuar.';
           this.messageType = 'success';
-          
-          // Alerta nativa que el usuario confirmó que funcionaba
-          alert(successMsg);
-          
-          setTimeout(() => {
-            this.isResetMode = true;
-          }, 3000);
+          this.solicitudExitosa = true;
         },
         error: (error) => {
-          console.error('Recovery error:', error);
           this.message = '❌ Error: ' + (error.error?.message || 'No se pudo procesar la solicitud.');
           this.messageType = 'error';
         }
@@ -91,20 +137,34 @@ export class Recovery implements OnInit {
   }
 
   handleResetPassword(): void {
-    if (!this.token || !this.nuevaContrasena || !this.confirmarContrasena) {
-      this.message = 'Por favor, completa todos los campos (código y contraseña)';
-      this.messageType = 'error';
-      return;
-    }
+    const nuevaContrasena = this.recoveryForm.get('nuevaContrasena')?.value;
+    this.isLoading = true;
+    this.message = '';
 
-    if (this.nuevaContrasena !== this.confirmarContrasena) {
-      this.message = 'Las contraseñas no coinciden';
-      this.messageType = 'error';
-      return;
-    }
+    this.recoveryService.resetPassword({ 
+      token: this.token, 
+      nuevaContrasena 
+    }).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.message = '✅ Contraseña restablecida con éxito. Redirigiendo al login...';
+        this.messageType = 'success';
+        setTimeout(() => this.router.navigate(['/login']), 3000);
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.message = '❌ Error: ' + (error.error?.message || 'Token inválido o expirado');
+        this.messageType = 'error';
+      }
+    });
+  }
 
-    if (this.nuevaContrasena.length < 6) {
-      this.message = 'La contraseña debe tener al menos 6 caracteres';
+  handleChangePassword(): void {
+    const nuevaContrasena = this.recoveryForm.get('nuevaContrasena')?.value;
+    const currentUser = this.authService.getCurrentUser();
+    
+    if (!currentUser?.id) {
+      this.message = '❌ Error: Sesión no válida. Inicia sesión nuevamente.';
       this.messageType = 'error';
       return;
     }
@@ -112,28 +172,26 @@ export class Recovery implements OnInit {
     this.isLoading = true;
     this.message = '';
 
-    this.recoveryService.resetPassword({ 
-      token: this.token, 
-      nuevaContrasena: this.nuevaContrasena 
-    }).subscribe({
-      next: (response) => {
+    this.usersService.updateUser(currentUser.id, { password: nuevaContrasena }).subscribe({
+      next: () => {
         this.isLoading = false;
-        this.message = '✅ Contraseña restablecida con éxito. Redirigiendo al login...';
+        this.message = '✅ Contraseña cambiada con éxito.';
         this.messageType = 'success';
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 3000);
+        setTimeout(() => this.router.navigate(['/perfil-usuario']), 2000);
       },
       error: (error) => {
         this.isLoading = false;
-        this.message = '❌ Error al restablecer contraseña: ' + (error.error?.message || 'Token inválido o expirado');
+        this.message = '❌ Error: ' + (error.error?.message || 'No se pudo completar la acción');
         this.messageType = 'error';
-        console.error('Reset error:', error);
       }
     });
   }
 
   goToLogin(): void {
     this.router.navigate(['/login']);
+  }
+
+  goToProfile(): void {
+    this.router.navigate(['/perfil-usuario']);
   }
 }

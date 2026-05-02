@@ -18,7 +18,7 @@ export class TokenRecuperacionService {
     private mailerService: MailerService,
   ) { }
 
-  async solicitarRecuperacion(dto: SolicitarRecuperacionDto): Promise<{ mensaje: string, tokenSimulado: string }> {
+  async solicitarRecuperacion(dto: SolicitarRecuperacionDto): Promise<{ mensaje: string }> {
     const usuario = await this.usersService.findByEmail(dto.email);
     if (!usuario) {
       throw new NotFoundException(`El correo electrónico ${dto.email} no está registrado en la base de datos.`);
@@ -28,7 +28,7 @@ export class TokenRecuperacionService {
 
     const nuevoToken = crypto.randomBytes(32).toString('hex');
     const fechaExpiracion = new Date();
-    fechaExpiracion.setMinutes(fechaExpiracion.getMinutes() + 5);
+    fechaExpiracion.setMinutes(fechaExpiracion.getMinutes() + 10);
 
     const ticket = this.tokenRepository.create({
       token: nuevoToken,
@@ -39,18 +39,24 @@ export class TokenRecuperacionService {
     await this.tokenRepository.save(ticket);
 
     try {
+      const urlRecuperacion = `http://localhost:4200/recovery?token=${nuevoToken}`;
       await this.mailerService.sendMail({
         to: usuario.email,
         subject: 'Recuperación de Contraseña - HelpyourPet',
         html: `
-          <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
+          <div style="font-family: Arial, sans-serif; text-align: center; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #4CAF50;">Clínica Veterinaria HelpyourPet</h2>
-            <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
-            <p>Por favor, usa el siguiente código de seguridad en tu aplicación. Recuerda que expirará en <b>10 MINUTOS</b>.</p>
-            <div style="margin: 20px auto; padding: 15px; background: #f2f2f2; border-radius: 5px; font-size: 24px; font-weight: bold; letter-spacing: 2px;">
-              ${nuevoToken}
+            <p style="font-size: 16px;">Hola <b>${usuario.fullName || usuario.username}</b>,</p>
+            <p>Has solicitado restablecer tu contraseña. Haz clic en el botón de abajo para continuar:</p>
+            <div style="margin: 30px 0;">
+              <a href="${urlRecuperacion}" 
+                 style="background-color: #2e9e44; color: white; padding: 14px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                 Restablecer mi contraseña
+              </a>
             </div>
-            <p style="font-size: 12px; color: #777;">Si no solicitaste este código, puedes ignorar este correo de forma segura.</p>
+            <p style="font-size: 14px; color: #666;">Este enlace expirará en 10 minutos por tu seguridad.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #999;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
           </div>
         `,
       });
@@ -60,8 +66,7 @@ export class TokenRecuperacionService {
     }
 
     return { 
-      mensaje: 'Recuperación inicializada con éxito. Úselo rápido porque caducará pronto.',
-      tokenSimulado: 'Enviado por correo electrónico.' 
+      mensaje: 'Recuperación inicializada con éxito. Revisa tu correo electrónico para continuar.'
     };
   }
 

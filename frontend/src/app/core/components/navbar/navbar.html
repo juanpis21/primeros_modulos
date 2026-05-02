@@ -1,71 +1,69 @@
+<!-- NAVBAR ESTÁTICO - Estilo HelpYourPet -->
 <nav class="navbar">
-		<div class="navbar-container">
-			<div class="brand-section">
-				<div class="logo">
-					<img src="assets/IMG/logo.png" alt="logo" class="logo">
-				</div>
-				<a routerLink="/inicio" style="text-decoration: none;">
-					<span class="brand-name">HelpYourPet</span>
-				</a>
-			</div>
+  <div class="navbar-container">
+    <!-- Logo + Nombre (izquierda) -->
+    <div class="brand-section">
+      <img src="assets/IMG/logo.png" alt="HelpYourPet" class="logo-img">
+      <span class="brand-name">HelpYourPet</span>
+    </div>
 
-			<div class="d-flex align-items-center">
-				<div class="botones-finales">
-					<div class="nav-buttons">
-						<div class="theme-toggle-container">
-							<input type="checkbox" id="themeToggle" class="theme-toggle-checkbox" [checked]="isDarkMode" (change)="toggleTheme($event)">
-							<label for="themeToggle" class="theme-toggle-label">
-								<div class="toggle-circle">
-									<i class="bi bi-moon-stars-fill toggle-icon moon-icon"></i>
-									<i class="bi bi-sun-fill toggle-icon sun-icon"></i>
-								</div>
-							</label>
-						</div>
-					</div>
-				</div>
+    <!-- Botón de perfil (derecha) -->
+    <div class="profile-section">
+      <button class="profile-btn" (click)="toggleProfileMenu()" aria-label="Menú de perfil">
+        <img
+          [src]="usuarioLogueado?.avatar || 'assets/images/Default.png'"
+          alt="Perfil" class="profile-avatar">
+        <i class="fas fa-chevron-down profile-arrow"></i>
+      </button>
+      
+      <!-- Menú desplegable de perfil -->
+      <div class="profile-dropdown" [class.active]="profileMenuAbierto">
+        <div class="dropdown-header">
+          <img
+            [src]="usuarioLogueado?.avatar || 'assets/images/Default.png'"
+            alt="Perfil" class="dropdown-avatar">
+          <div class="dropdown-user-info">
+            <span class="dropdown-username">{{ usuarioLogueado?.nombre || 'Usuario' }}</span>
+            <span class="dropdown-email">{{ usuarioLogueado?.email || '' }}</span>
+          </div>
+        </div>
+        <nav class="dropdown-nav">
+          <a *ngIf="!isInicio" (click)="irAInicio(); toggleProfileMenu()" class="dropdown-item">
+            <i class="fas fa-home"></i>
+            <span>Inicio</span>
+          </a>
+          <a (click)="irAPerfil(); toggleProfileMenu()" class="dropdown-item">
+            <i class="fas fa-user"></i>
+            <span>Mi Perfil</span>
+          </a>
+          <a (click)="irATienda(); toggleProfileMenu()" class="dropdown-item">
+            <i class="fas fa-shopping-cart"></i>
+            <span>PetShop</span>
+          </a>
+          
+          <a (click)="irASobreNosotros(); toggleProfileMenu()" class="dropdown-item">
+            <i class="fas fa-users"></i>
+            <span>Sobre Nosotros</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a (click)="logout(); toggleProfileMenu()" class="dropdown-item logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Cerrar Sesión</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</nav>
 
-				<div class="hamburger-menu">
-					<button class="hamburger-btn" (click)="toggleMenu($event)">
-						<i class="fas fa-bars"></i>
-					</button>
-					<div class="menu-content" [class.active]="isMenuOpen" (click)="$event.stopPropagation()">
-						<div class="menu-item">
-							<a routerLink="/perfil-usuario" style="text-decoration: none;">
-								<i class="fas fa-user-plus"></i>
-								<span>Perfil</span>
-							</a>
-						</div>
-						<div class="menu-item">
-							<a routerLink="/tienda" style="text-decoration: none;"> <i class="fas fa-shop"></i>
-								<span>PetShop</span></a>
-						</div>
-						<!--<div class="menu-item">
-							<a href="Reporte.html" style="text-decoration: none;">
-								<i class="fas fa-clinic-medical"></i>
-								<span>Reporte Maltrato</span>
-							</a>
-						</div>
-						<div class="menu-item">
-							<a href="Calificaciones.html" style="text-decoration: none;">
-								<i class="fas fa-star"></i>
-								<span>Calificaciones</span>
-							</a>
-						</div>-->
+<!-- BOTÓN MODO OSCURO (Esquina inferior izquierda) -->
+<button class="theme-toggle-bottom" (click)="toggleModoOscuro()"
+  [attr.aria-label]="modoOscuro ? 'Activar modo claro' : 'Activar modo oscuro'"
+  [class.dark-mode]="modoOscuro">
+  <i class="fas" [ngClass]="modoOscuro ? 'fa-sun' : 'fa-moon'"></i>
+</button>
 
-
-						<div class="menu-item">
-							<a routerLink="/sobre-nosotros" style="text-decoration: none;"> <i
-									class="fas fa-users"></i>
-								<span>Acerca de Nosotros</span></a>
-						</div>
-						<div class="menu-item">
-							<a routerLink="/" style="text-decoration: none;">
-								<i class="fas fa-arrow-right"></i>
-								<span>Cerrar Sesión</span>
-							</a>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</nav>
+<!-- BOTÓN SUBIR (Scroll to top) -->
+<button class="btn-scroll-top" [class.visible]="showScrollTop" (click)="scrollToTop()" aria-label="Volver arriba">
+  <i class="fas fa-arrow-up"></i>
+</button>
